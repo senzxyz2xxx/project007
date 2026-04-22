@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Boss Fight Quiz v3</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+<div class="toast" id="toast"></div>
+
+<!-- ═══════════════════════════════════════════
+     LEVEL UP OVERLAY
+═══════════════════════════════════════════ -->
+<div class="overlay-bg" id="levelup-overlay">
+  <div class="levelup-box">
+    <div class="levelup-glow">⚡</div>
+    <div class="levelup-title">LEVEL UP!</div>
+    <div class="levelup-desc" id="levelup-level">Level 2</div>
+    <div class="new-skills" id="levelup-skills"></div>
+    <button class="btn btn-gold" onclick="closeLevelUp()">เดินหน้าต่อ!</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     LOGIN SCREEN
+═══════════════════════════════════════════ -->
+<div id="login-screen">
+  <div class="stars" style="position:fixed;inset:0;pointer-events:none;z-index:0"></div>
+  <div style="position:relative;z-index:1;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px">
+    <div class="login-box">
+      <div class="login-logo">⚔️ Boss<span>Fight</span></div>
+      <div class="login-sub">Quiz RPG — เรียนรู้ผ่านการต่อสู้</div>
+
+      <div class="login-tabs">
+        <button class="login-tab active" id="login-tab-login"    onclick="switchLoginTab('login')">เข้าสู่ระบบ</button>
+        <button class="login-tab"        id="login-tab-register" onclick="switchLoginTab('register')">สมัครสมาชิก</button>
+      </div>
+
+      <div class="input-group">
+        <label class="input-label">ชื่อผู้ใช้</label>
+        <input class="input-field" id="login-username" type="text" placeholder="กรอกชื่อผู้ใช้" autocomplete="username"/>
+      </div>
+      <div class="input-group">
+        <label class="input-label">รหัสผ่าน</label>
+        <input class="input-field" id="login-password" type="password" placeholder="กรอกรหัสผ่าน" autocomplete="current-password"
+               onkeydown="if(event.key==='Enter')doLogin()"/>
+      </div>
+      <div class="input-group" id="register-extra" style="display:none">
+        <label class="input-label">ชื่อที่แสดง</label>
+        <input class="input-field" id="login-displayname" type="text" placeholder="ชื่อที่จะแสดงในเกม"/>
+      </div>
+
+      <button class="btn-login" onclick="doLogin()">
+        <span id="login-btn-text">เข้าสู่ระบบ</span>
+      </button>
+      <div class="login-error" id="login-error"></div>
+      <!-- <div class="login-hint">🔐 Admin: username <b>admin</b> / password <b>BFQ@admin2025</b></div> -->
+    </div>
+  </div>
+</div>
+  
+<!-- ═══════════════════════════════════════════
+     MAIN APP
+═══════════════════════════════════════════ -->
+<div id="app" style="display:none">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="logo">⚔️ Boss<span>Fight</span> Quiz</div>
+    <div class="header-right">
+      <span style="font-size:11px;color:var(--muted)">v3.0</span>
+      <button class="btn-logout" onclick="doLogout()">ออกจากระบบ</button>
+    </div>
+  </div>
+
+  <!-- STATUS BAR -->
+  <div class="status-bar">
+    <div class="stat-item">
+      <div class="stat-label">⚡ Level</div>
+      <div class="stat-val gold" id="stat-level">1</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-label">💰 Gold</div>
+      <div class="stat-val gold" id="stat-gold">0</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-label">🏆 Wins</div>
+      <div class="stat-val green" id="stat-wins">0</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-label">🗼 Floor</div>
+      <div class="stat-val purple" id="stat-floor">0</div>
+    </div>
+    <div class="xp-wrap">
+      <div class="xp-track"><div class="xp-fill" id="xp-fill" style="width:0%"></div></div>
+      <div class="xp-label" style="display:flex;justify-content:space-between">
+        <span id="xp-label-left">0 / 100 XP</span>
+        <span id="xp-label-right">Lv.1</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" id="tab-home"      onclick="showTab('home')">🏠 หลัก</button>
+    <button class="tab"        id="tab-skills"    onclick="showTab('skills')">✨ สกิล</button>
+    <button class="tab"        id="tab-inventory" onclick="showTab('inventory')">🎒 ไอเทม</button>
+    <!-- <button class="tab"        id="tab-board"     onclick="showTab('board')">📊 อันดับ</button> -->
+  </div>
+
+  <!-- ═══════════════ HOME ═══════════════ -->
+  <div id="screen-home">
+    <div class="home-hero">
+      <div class="home-title">เลือกบอสที่จะต่อสู้</div>
+      <!-- <div class="home-sub">ตอบถูก → ดีลดาเมจ | ตอบผิด → โดนตี | Streak → โบนัสคูณ</div> -->
+      <div class="player-greeting" id="player-name-display">สวัสดี!</div>
+    </div>
+
+    <!-- Daily Challenge -->
+    <div class="daily-card" onclick="startDaily()">
+      <div class="daily-icon">🌟</div>
+      <div class="daily-info">
+        <div class="daily-title">Daily Challenge</div>
+        <div class="daily-sub">7 คำถามสุดมันส์จากทุกวิชา! รีเซ็ตทุกวัน</div>
+      </div>
+      <div class="daily-badge" id="daily-badge">รับรางวัล</div>
+    </div>
+
+    <div class="section-label">⚔️ เลือกบอส</div>
+    <div class="boss-grid">
+      <div class="boss-card" onclick="startBattle('bio')"         style="--accent:#4caf7d">
+        <span class="boss-emoji">🦠</span>
+        <div class="boss-name">ไวรัสโควิด</div>
+        <div class="boss-sub">ชีววิทยา</div>
+        <span class="boss-diff diff-easy">ง่าย</span>
+        <div class="boss-reward">🏆 60XP · 💰30G</div>
+      </div>
+      <div class="boss-card" onclick="startBattle('english')"     style="--accent:#22d3ee">
+        <span class="boss-emoji">📚</span>
+        <div class="boss-name">Grammar Dragon</div>
+        <div class="boss-sub">ภาษาอังกฤษ</div>
+        <span class="boss-diff diff-easy">ง่าย</span>
+        <div class="boss-reward">🏆 55XP · 💰28G</div>
+      </div>
+      <div class="boss-card" onclick="startBattle('thailand')"    style="--accent:#fb923c">
+        <span class="boss-emoji">🏯</span>
+        <div class="boss-name">สยามผู้พิทักษ์</div>
+        <div class="boss-sub">ความรู้ไทย</div>
+        <span class="boss-diff diff-easy">ง่าย</span>
+        <div class="boss-reward">🏆 60XP · 💰32G</div>
+      </div>
+      <div class="boss-card" onclick="startBattle('math')"        style="--accent:#5b9cf6">
+        <span class="boss-emoji">🐉</span>
+        <div class="boss-name">มังกรสมการ</div>
+        <div class="boss-sub">คณิตศาสตร์</div>
+        <span class="boss-diff diff-med">ปานกลาง</span>
+        <div class="boss-reward">🏆 80XP · 💰40G</div>
+      </div>
+      <div class="boss-card" onclick="startBattle('history')"     style="--accent:#fb923c">
+        <span class="boss-emoji">⚔️</span>
+        <div class="boss-name">จอมทัพโบราณ</div>
+        <div class="boss-sub">ประวัติศาสตร์</div>
+        <span class="boss-diff diff-med">ปานกลาง</span>
+        <div class="boss-reward">🏆 70XP · 💰35G</div>
+      </div>
+      <div class="boss-card" onclick="startBattle('geography')"   style="--accent:#4caf7d">
+        <span class="boss-emoji">🌍</span>
+        <div class="boss-name">มังกรแผนที่</div>
+        <div class="boss-sub">ภูมิศาสตร์</div>
+        <span class="boss-diff diff-med">ปานกลาง</span>
+        <div class="boss-reward">🏆 75XP · 💰38G</div>
+      </div>
+      <div class="boss-card" onclick="startBattle('science')"     style="--accent:#a78bfa">
+        <span class="boss-emoji">⚗️</span>
+        <div class="boss-name">จอมพลังงาน</div>
+        <div class="boss-sub">วิทยาศาสตร์</div>
+        <span class="boss-diff diff-hard">ยาก</span>
+        <div class="boss-reward">🏆 100XP · 💰50G</div>
+      </div>
+      <div class="boss-card" onclick="startBattle('programming')" style="--accent:#22d3ee">
+        <span class="boss-emoji">🐛</span>
+        <div class="boss-name">บั๊กยักษ์</div>
+        <div class="boss-sub">วิทยาการคอมพ์</div>
+        <span class="boss-diff diff-hard">ยาก</span>
+        <div class="boss-reward">🏆 95XP · 💰48G</div>
+      </div>
+      <div class="boss-card" onclick="startBattle('physics')"     style="--accent:#f472b6">
+        <span class="boss-emoji">🌌</span>
+        <div class="boss-name">ราชาแรงโน้มถ่วง</div>
+        <div class="boss-sub">ฟิสิกส์</div>
+        <span class="boss-diff diff-epic">ยากมาก</span>
+        <div class="boss-reward">🏆 130XP · 💰65G</div>
+      </div>
+      <div class="boss-card" onclick="startBattle('astronomy')"   style="--accent:#22d3ee">
+        <span class="boss-emoji">⭐</span>
+        <div class="boss-name">ราชาดาว</div>
+        <div class="boss-sub">ดาราศาสตร์</div>
+        <span class="boss-diff diff-epic">ยากมาก</span>
+        <div class="boss-reward">🏆 150XP · 💰75G</div>
+      </div>
+    </div>
+
+    <!-- Endless Tower -->
+    <div class="endless-card" onclick="startEndless()">
+      <div class="endless-icon">🗼</div>
+      <div class="endless-info">
+        <div class="endless-title">Endless Tower</div>
+        <div class="endless-sub">ขึ้นชั้นไม่สิ้นสุด · ยากขึ้นทุกชั้น · ดรอปเรต +50%</div>
+      </div>
+      <div style="color:var(--purple);font-size:18px;margin-left:auto">→</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ BATTLE ═══════════════ -->
+  <div id="screen-battle" style="display:none">
+
+    <div class="floor-banner" id="floor-banner" style="display:none">
+      <div><div class="floor-label">Endless Tower</div><div class="floor-num" id="floor-display">ชั้น 1</div></div>
+      <div style="font-size:12px;color:var(--muted)" id="floor-record">สถิติ: 0</div>
+    </div>
+
+    <div class="battle-top">
+      <div class="fighter">
+        <div class="fighter-name">👤 ผู้เล่น</div>
+        <div class="fighter-hp"><span id="player-hp-val">100</span><span id="player-hp-max">/100</span></div>
+        <div class="hp-track"><div class="hp-fill hp-player" id="player-hp-bar" style="width:100%"></div></div>
+      </div>
+      <div class="vs-badge">VS</div>
+      <div class="fighter">
+        <div class="fighter-name" id="boss-name-display">👹 บอส</div>
+        <div class="fighter-hp"><span id="boss-hp-val">100</span><span id="boss-hp-max">/100</span></div>
+        <div class="hp-track"><div class="hp-fill hp-boss" id="boss-hp-bar" style="width:100%"></div></div>
+      </div>
+    </div>
+
+    <div class="combo-bar">
+      <div class="combo-flames">
+        <span class="flame" id="f1">🔥</span><span class="flame" id="f2">🔥</span>
+        <span class="flame" id="f3">🔥</span><span class="flame" id="f4">🔥</span>
+        <span class="flame" id="f5">🔥</span>
+      </div>
+      <div class="combo-text">Streak: <span class="hi" id="combo-count">0</span> | Bonus: <span class="hi" id="combo-bonus">x1.0</span></div>
+    </div>
+
+    <div class="skills-row" id="skills-row"></div>
+
+    <div class="question-card boss-speaking" id="question-card">
+      <div class="boss-speech">
+        <div class="boss-face" id="boss-face">👹</div>
+        <div class="speech-bubble">
+          <div class="boss-taunt" id="boss-taunt">บอสพูด...</div>
+          <div class="question-text" id="question-text">คำถาม</div>
+        </div>
+      </div>
+      <div class="choices" id="choices"></div>
+    </div>
+
+    <div class="battle-log" id="battle-log"></div>
+
+    <div class="action-row" id="action-row" style="display:none">
+      <button class="btn btn-gold" onclick="nextQuestion()">คำถามต่อไป →</button>
+      <button class="btn btn-red"  onclick="surrenderBattle()">ยอมแพ้</button>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-top:4px">
+      <span style="font-size:12px;color:var(--muted)" id="q-counter">ข้อ 1/5</span>
+      <span style="font-size:12px;color:var(--gold)"  id="battle-score">คะแนน: 0</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════ RESULT ═══════════════ -->
+  <div id="screen-result" style="display:none">
+    <div class="result-hero">
+      <div class="result-icon"  id="result-icon">🏆</div>
+      <div class="result-title" id="result-title">ชนะแล้ว!</div>
+      <div class="result-sub"   id="result-sub">สรุปผล</div>
+      <div class="grade-badge grade-S" id="result-grade">S</div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-box"><div class="stat-box-num" id="r-correct">0</div><div class="stat-box-label">ตอบถูก</div></div>
+      <div class="stat-box"><div class="stat-box-num" id="r-wrong">0</div><div class="stat-box-label">ตอบผิด</div></div>
+      <div class="stat-box"><div class="stat-box-num" id="r-maxcombo">0</div><div class="stat-box-label">Max Streak</div></div>
+      <div class="stat-box"><div class="stat-box-num" id="r-score">0</div><div class="stat-box-label">คะแนน</div></div>
+    </div>
+    <div class="rewards-card">
+      <div class="rewards-title">รางวัลที่ได้รับ</div>
+      <div id="rewards-list"></div>
+    </div>
+    <div class="action-row">
+      <button class="btn btn-gold"   onclick="showTab('home')">กลับหน้าหลัก</button>
+      <button class="btn btn-purple" onclick="startEndless()">🗼 Endless</button>
+      <button class="btn"            onclick="showTab('board')">📊 อันดับ</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════ SKILLS ═══════════════ -->
+  <div id="screen-skills" style="display:none">
+    <div style="margin-bottom:12px">
+      <div style="font-size:15px;font-weight:700;color:var(--text)">ทักษะของเจ้า</div>
+      <div style="font-size:12px;color:var(--muted)">ปลดล็อคตามเลเวล — ใช้ระหว่างต่อสู้ได้</div>
+    </div>
+    <div class="skill-list" id="skill-list"></div>
+  </div>
+
+  <!-- ═══════════════ INVENTORY ═══════════════ -->
+  <div id="screen-inventory" style="display:none">
+    <div class="inv-header">
+      <div>
+        <div style="font-size:15px;font-weight:700;color:var(--text)">กระเป๋าไอเทม</div>
+        <div style="font-size:12px;color:var(--muted)">กดดูรายละเอียด — ใช้ระหว่างต่อสู้ผ่านปุ่ม Quick Bar</div>
+      </div>
+      <div class="inv-gold">💰 <span id="inv-gold-display">0</span></div>
+    </div>
+    <div class="item-detail" id="item-detail">
+      <div class="item-detail-header">
+        <div class="item-big-icon" id="item-detail-icon">🧪</div>
+        <div>
+          <div class="item-detail-title" id="item-detail-name">ไอเทม</div>
+          <div class="item-detail-sub"   id="item-detail-desc">คำอธิบาย</div>
+          <span class="item-rarity"      id="item-detail-rarity">Common</span>
+        </div>
+      </div>
+    </div>
+    <div class="inv-grid" id="inv-grid"></div>
+    <div class="text-muted" style="margin-top:6px">✨ ไอเทม Epic/Legend ดรอปจากบอสและ Endless Tower</div>
+  </div>
+
+  <!-- ═══════════════ LEADERBOARD ═══════════════ -->
+  <div id="screen-board" style="display:none">
+    <div style="margin-bottom:12px">
+      <div style="font-size:15px;font-weight:700;color:var(--text)">📊 อันดับผู้เล่น</div>
+      <div style="font-size:12px;color:var(--muted)">เรียงตามคะแนนสะสมทั้งหมด</div>
+    </div>
+    <div id="board-list"></div>
+  </div>
+
+
+<script src="game.js"></script>
+</body>
+</html>
